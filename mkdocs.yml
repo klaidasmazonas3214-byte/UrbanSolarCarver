@@ -1,0 +1,75 @@
+site_name: Urban Solar Carver
+site_description: GPU-accelerated solar envelope generation for urban design
+site_url: https://avarth.github.io/UrbanSolarCarver/
+repo_url: https://github.com/avarth/UrbanSolarCarver
+repo_name: avarth/UrbanSolarCarver
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: amber
+      accent: deep orange
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: amber
+      accent: deep orange
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - content.code.copy
+    - toc.follow
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quick-start.md
+    - Configuration: getting-started/configuration.md
+  - Carving Modes: modes.md
+  - Grasshopper Plugin: grasshopper.md
+  - Project Map: project-map.md
+  - API Reference:
+    - api/index.md
+    - Pipeline: api/pipeline.md
+    - Carving: api/carving.md
+    - Ray Tracer: api/raytracer.md
+    - Grid Operations: api/grid.md
+    - Sky Patches: api/sky-patches.md
+    - Sun Vectors: api/sun.md
+    - Scoring: api/scoring.md
+    - I/O: api/io.md
+    - Configuration: api/config.md
+    - Session: api/session.md
+    - Daemon: api/daemon.md
+    - CLI: api/cli.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [src]
+          options:
+            show_source: false
+            show_root_heading: true
+            show_symbol_type_heading: true
+            members_order: source
+            docstring_style: numpy
+            merge_init_into_class: true
+            show_if_no_docstring: false
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true

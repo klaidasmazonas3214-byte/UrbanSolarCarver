@@ -1,0 +1,90 @@
+"""Tests for api_core/_util.py: histograms, score statistics, Tregenza helpers."""
+import numpy as np
+import pytest
+from pathlib import Path
+
+from urbansolarcarver.api_core._diagnostics import save_histogram, score_statistics
+
+
+# ---------------------------------------------------------------------------
+# score_statistics
+# ---------------------------------------------------------------------------
+
+class TestScoreStatistics:
+    def test_empty_array(self):
+        result = score_statistics(np.array([]))
+        assert result == {"count": 0}
+
+    def test_all_nan(self):
+        result = score_statistics(np.array([np.nan, np.nan]))
+        assert result == {"count": 0}
+
+    def test_normal_array(self):
+        scores = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        result = score_statistics(scores)
+        assert result["count"] == 5
+        assert result["min"] == 1.0
+        assert result["max"] == 5.0
+        assert result["mean"] == pytest.approx(3.0)
+        assert "median" in result
+        assert "std" in result
+        assert "p5" in result
+        assert "p95" in result
+        assert "nonzero_count" in result
+        assert "nonzero_fraction" in result
+
+    def test_with_inf(self):
+        scores = np.array([1.0, np.inf, 3.0])
+        result = score_statistics(scores)
+        assert result["count"] == 2  # inf filtered out
+
+    def test_3d_array(self):
+        scores = np.ones((5, 5, 5))
+        result = score_statistics(scores)
+        assert result["count"] == 125
+
+
+# ---------------------------------------------------------------------------
+# save_histogram
+# ---------------------------------------------------------------------------
+
+class TestSaveHistogram:
+    def test_creates_png(self, tmp_path):
+        scores = np.random.rand(100) * 10
+        path = save_histogram(scores, tmp_path, "test_hist.png")
+        assert path is not None
+        assert path.exists()
+        assert path.suffix == ".png"
+
+    def test_empty_array_returns_none(self, tmp_path):
+        result = save_histogram(np.array([]), tmp_path)
+        assert result is None
+
+    def test_all_nan_returns_none(self, tmp_path):
+        result = save_histogram(np.array([np.nan, np.nan, np.nan]), tmp_path)
+        assert result is None
+
+    def test_with_threshold_line(self, tmp_path):
+        scores = np.random.rand(100)
+        path = save_histogram(scores, tmp_path, threshold_line=0.5)
+        assert path is not None
+        assert path.exists()
+
+    def test_zero_dominant_scores_creates_histogram(self, tmp_path):
+        """When most voxels score zero, the histogram should still be created.
+
+        BUG B3: currently the histogram filters to flat > 0, hiding the
+        zero-score population. After fix, the plot should annotate the
+        zero count (e.g., '900 zero-score voxels (90%)').
+        """
+        scores = np.concatenate([np.zeros(900), np.random.rand(100) * 10])
+        path = save_histogram(scores, tmp_path, "zero_test.png")
+        assert path is not None
+        assert path.exists()
+
+    def test_constant_scores(self, tmp_path):
+        """All-identical scores should not crash."""
+        scores = np.full(50, 3.14)
+        path = save_histogram(scores, tmp_path, "const.png")
+        # May return a histogram or None depending on implementation
+        # Just verify no crash

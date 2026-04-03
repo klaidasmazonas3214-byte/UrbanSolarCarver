@@ -1,0 +1,39 @@
+# UrbanSolarCarver — Irradiance mode
+# Carves voxels based on cumulative solar irradiance (direct + diffuse)
+# reaching test surfaces via each sky patch. Uses Perez all-weather sky model.
+# Typical use: maximise total solar energy on facades/rooftops.
+
+# --- Required paths ---
+max_volume_path:    "path/to/maxVolume.ply"
+test_surface_path:  "path/to/testSurfaces.ply"
+epw_path:           "path/to/weather.epw"
+out_dir:            "path/to/output"
+
+mode: irradiance
+
+# Analysis period
+start_month: 1
+start_day:   1
+start_hour:  0
+end_month:   12
+end_day:     31
+end_hour:    23
+
+# Grid
+voxel_size: 1.0
+
+# Thresholding
+threshold: carve_fraction
+carve_fraction: 0.7
+
+# -- Defaults you may want to override ----------------------------------------
+# score_smoothing: null  # Gaussian blur radius (m) on scores before thresholding. null = auto (1.1× voxel_size). 0 = off. Try 1.0-1.2× voxel_size.
+# voxel_size:      1.0    # voxel edge in metres (0.5 = 8x more voxels)
+# grid_step:       1.0    # test-surface sampling spacing in metres
+# ray_length:      300.0  # max ray distance in metres
+# carve_fraction:  0.7    # fraction of obstruction weight to remove (0-1)
+# threshold:       'carve_fraction'   # or 'headtail', or a numeric value
+# min_altitude:    5.0    # ignore sun below this elevation (degrees)
+# apply_smoothing: false  # true = SDF smooth + marching cubes
+# device:          'auto' # 'auto', 'cpu', or 'cuda'
+# See REFERENCE_all_options.yaml for the complete parameter list.

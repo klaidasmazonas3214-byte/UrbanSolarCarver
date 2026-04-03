@@ -1,0 +1,31 @@
+# UrbanSolarCarver — Tilted plane mode
+# Carves voxels using a fixed angular plane per compass octant.
+# No weather data or analysis period needed — purely geometric.
+# Typical use: daylight envelope (Brown & DeKay), street-canyon proportions.
+
+# --- Required paths ---
+max_volume_path:    "path/to/maxVolume.ply"
+test_surface_path:  "path/to/testSurfaces.ply"
+out_dir:            "path/to/output"
+
+mode: tilted_plane
+
+# Plane angle: single value or 8-element list [N, NE, E, SE, S, SW, W, NW]
+# 45 deg gives a 1:1 height-to-width ratio (classic daylight envelope)
+tilted_plane_angle_deg: 45.0
+# Or per-octant: [30, 27, 24, 24, 27, 30, 30, 27]
+
+# Grid
+voxel_size: 1.0
+
+# --- Threshold ---
+# tilted_plane is binary: a voxel either protrudes above the plane (culled)
+# or it does not (kept). Do not set threshold — leave it unset (None).
+
+# -- Defaults you may want to override ----------------------------------------
+# voxel_size:      1.0    # voxel edge in metres (0.5 = 8x more voxels)
+# grid_step:       1.0    # test-surface sampling spacing in metres
+# ray_length:      300.0  # max ray distance in metres
+# apply_smoothing: false  # true = SDF smooth + marching cubes
+# device:          'auto' # 'auto', 'cpu', or 'cuda'
+# See REFERENCE_all_options.yaml for the complete parameter list.

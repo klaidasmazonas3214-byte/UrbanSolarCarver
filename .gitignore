@@ -1,0 +1,86 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.env/
+.venv/
+env/
+venv/
+
+# IDE/project files
+.vscode/
+.idea/
+
+# Python packaging
+*.egg
+*.egg-info/
+.eggs/
+dist/
+build/
+pip-wheel-metadata/
+constraints.txt
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Installer logs
+pip-log.txt
+
+# Daemon runtime artifacts
+.daemon_authkey
+daemon.log
+
+# Machine-specific paths
+python_path.txt
+
+# Misc
+*.bak
+*.tmp
+
+# MkDocs build output
+site/
+
+# Test cache
+.pytest_cache/
+
+# Claude Code local state
+.claude/
+.vault-location
+
+# Legacy (removed)
+legacy/
+
+# Example outputs (generated, contain absolute paths)
+examples/test_outputs/
+
+# Grasshopper dev/test canvases and build scripts (plugin .ghuser files are tracked separately)
+grasshopper/*.gh
+grasshopper/*.ghx
+grasshopper/_build_ghx.py
+grasshopper/_install_components.py
+
+# Convenience bat scripts (CLI handles daemon lifecycle)
+start_daemon.bat
+stop_daemon.bat
+
+# Benchmarks (internal)
+benchmarks/
+
+# Project vault (internal, not for public repo)
+vault/
+
+# Superpowers plans (internal development)
+docs/superpowers/
+
+# Backups
+src.zip
+*.zip
+
+# Weather files (ASHRAE/IWEC copyright — users download their own)
+*.epw
+
+# Private files
+fullText.pdf

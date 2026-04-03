@@ -1,0 +1,251 @@
+#!/usr/bin/env python3
+"""
+UrbanSolarCarver — Environment Setup
+=====================================
+
+One-command bootstrap: creates a virtual environment, detects your GPU,
+installs the correct PyTorch build, and installs UrbanSolarCarver with
+all dependencies.
+
+Usage
+-----
+    python setup_env.py            # auto-detect GPU, install everything
+    python setup_env.py --cpu      # force CPU-only (no CUDA)
+    python setup_env.py --dry-run  # show what would be installed
+
+Requirements
+------------
+- Python >= 3.10 (system or conda)
+- NVIDIA GPU + driver (optional, for CUDA acceleration)
+
+What this script does
+---------------------
+1. Creates  .venv/  (if it doesn't exist)
+2. Detects CUDA version via  nvidia-smi
+3. Picks the matching PyTorch wheel index
+4. Installs PyTorch + warp-lang
+5. Installs UrbanSolarCarver in editable mode  (pip install -e .)
+6. Verifies the installation
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import platform
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+# ── Constants ──────────────────────────────────────────────────────────
+
+VENV_DIR = ".venv"
+MIN_PYTHON = (3, 10)
+
+# PyTorch CUDA version → pip index URL
+# Updated for PyTorch 2.5+; check https://pytorch.org/get-started/locally/
+TORCH_INDEX = {
+    "cpu":   "https://download.pytorch.org/whl/cpu",
+    "11.8":  "https://download.pytorch.org/whl/cu118",
+    "12.1":  "https://download.pytorch.org/whl/cu121",
+    "12.4":  "https://download.pytorch.org/whl/cu124",
+    "12.6":  "https://download.pytorch.org/whl/cu124",  # 12.6 driver uses cu124 wheels
+    "12.8":  "https://download.pytorch.org/whl/cu124",  # 12.8 driver uses cu124 wheels
+}
+
+# ── Helpers ────────────────────────────────────────────────────────────
+
+def log(msg: str, level: str = "info"):
+    prefix = {"info": "[+]", "warn": "[!]", "error": "[X]", "ok": "[OK]"}
+    print(f"{prefix.get(level, '   ')} {msg}")
+
+
+def run(cmd: list[str], check: bool = True, capture: bool = False, **kw):
+    """Run a subprocess, optionally capturing output."""
+    if capture:
+        r = subprocess.run(cmd, capture_output=True, text=True, **kw)
+        if check and r.returncode != 0:
+            raise RuntimeError(f"Command failed: {' '.join(cmd)}\n{r.stderr}")
+        return r
+    else:
+        subprocess.run(cmd, check=check, **kw)
+
+
+def detect_cuda_version() -> str | None:
+    """
+    Detect CUDA toolkit version from nvidia-smi.
+    Returns a string like "12.6" or None if no GPU / driver found.
+    """
+    nvidia_smi = shutil.which("nvidia-smi")
+    if nvidia_smi is None:
+        # Windows: try default install location
+        default = Path(r"C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe")
+        if default.is_file():
+            nvidia_smi = str(default)
+        else:
+            return None
+
+    try:
+        r = run([nvidia_smi], capture=True, check=False)
+        # Parse "CUDA Version: 12.6" from the output
+        m = re.search(r"CUDA Version:\s*([\d.]+)", r.stdout)
+        if m:
+            return m.group(1)
+    except Exception:
+        pass
+    return None
+
+
+def resolve_torch_index(cuda_version: str | None, force_cpu: bool) -> tuple[str, str]:
+    """
+    Given CUDA version string (or None), return (index_url, description).
+    """
+    if force_cpu or cuda_version is None:
+        return TORCH_INDEX["cpu"], "CPU-only"
+
+    # Match major.minor to our known index URLs
+    major_minor = ".".join(cuda_version.split(".")[:2])
+
+    if major_minor in TORCH_INDEX:
+        return TORCH_INDEX[major_minor], f"CUDA {major_minor}"
+
+    # Try just the major version with common minor
+    major = cuda_version.split(".")[0]
+    if major == "12":
+        # All CUDA 12.x uses cu124 wheels (binary compatible)
+        return TORCH_INDEX["12.4"], f"CUDA {major_minor} (using cu124 wheels)"
+    elif major == "11":
+        return TORCH_INDEX["11.8"], f"CUDA {major_minor} (using cu118 wheels)"
+
+    log(f"Unknown CUDA version {cuda_version}, falling back to CPU", "warn")
+    return TORCH_INDEX["cpu"], f"CPU-only (unknown CUDA {cuda_version})"
+
+
+def venv_python() -> Path:
+    """Return path to the venv's Python executable."""
+    if platform.system() == "Windows":
+        return Path(VENV_DIR) / "Scripts" / "python.exe"
+    return Path(VENV_DIR) / "bin" / "python"
+
+
+# ── Main ───────────────────────────────────────────────────────────────
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Set up UrbanSolarCarver development environment"
+    )
+    parser.add_argument(
+        "--cpu", action="store_true",
+        help="Force CPU-only installation (skip CUDA detection)"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help="Show what would be installed without doing anything"
+    )
+    args = parser.parse_args()
+
+    # ── 0. Check Python version ──
+    if sys.version_info < MIN_PYTHON:
+        log(f"Python >= {MIN_PYTHON[0]}.{MIN_PYTHON[1]} required, "
+            f"found {sys.version_info[0]}.{sys.version_info[1]}", "error")
+        sys.exit(1)
+    log(f"Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}")
+
+    # ── 1. Detect GPU ──
+    cuda_version = detect_cuda_version()
+    if cuda_version and not args.cpu:
+        log(f"Detected CUDA {cuda_version}")
+    elif args.cpu:
+        log("CPU-only mode (--cpu flag)")
+    else:
+        log("No NVIDIA GPU detected — installing CPU-only PyTorch", "warn")
+
+    index_url, desc = resolve_torch_index(cuda_version, args.cpu)
+    log(f"PyTorch target: {desc}")
+    log(f"Index URL: {index_url}")
+
+    if args.dry_run:
+        log("Dry run — would execute:", "info")
+        print(f"  1. python -m venv {VENV_DIR}")
+        print(f"  2. pip install torch --index-url {index_url}")
+        print(f"  3. pip install .[dev]")
+        return
+
+    # ── 2. Create venv ──
+    vpy = venv_python()
+    if not vpy.is_file():
+        log(f"Creating virtual environment in {VENV_DIR}/")
+        run([sys.executable, "-m", "venv", VENV_DIR])
+    else:
+        log(f"Virtual environment already exists at {VENV_DIR}/")
+
+    if not vpy.is_file():
+        log(f"venv creation failed — {vpy} not found", "error")
+        sys.exit(1)
+
+    # ── 3. Upgrade pip ──
+    log("Upgrading pip...")
+    run([str(vpy), "-m", "pip", "install", "--upgrade", "pip", "--quiet"])
+
+    # ── 4. Install PyTorch ──
+    log(f"Installing PyTorch ({desc})...")
+    run([str(vpy), "-m", "pip", "install",
+         "torch", "--index-url", index_url, "--quiet"])
+
+    # ── 5. Install UrbanSolarCarver + all deps ──
+    log("Installing UrbanSolarCarver and dependencies...")
+    run([str(vpy), "-m", "pip", "install", ".[dev]", "--quiet"])
+
+    # ── 6. Verify ──
+    log("Verifying installation...")
+
+    # Check torch
+    r = run([str(vpy), "-c",
+             "import torch; "
+             "print(f'PyTorch {torch.__version__}'); "
+             "print(f'CUDA available: {torch.cuda.is_available()}'); "
+             "print(f'Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"CPU\"}')"
+             ], capture=True, check=False)
+    if r.returncode == 0:
+        for line in r.stdout.strip().split("\n"):
+            log(line, "ok")
+    else:
+        log("PyTorch import failed!", "error")
+        print(r.stderr)
+        sys.exit(1)
+
+    # Check warp
+    r = run([str(vpy), "-c", "import warp; print(f'Warp {warp.__version__}')"],
+            capture=True, check=False)
+    if r.returncode == 0:
+        log(r.stdout.strip(), "ok")
+    else:
+        log("Warp import failed — GPU kernels won't work", "warn")
+
+    # Check urbansolarcarver
+    r = run([str(vpy), "-c",
+             "from urbansolarcarver import load_config, run_pipeline; "
+             "print('UrbanSolarCarver OK')"],
+            capture=True, check=False)
+    if r.returncode == 0:
+        log(r.stdout.strip(), "ok")
+    else:
+        log("UrbanSolarCarver import failed!", "error")
+        print(r.stderr)
+        sys.exit(1)
+
+    # ── Done ──
+    print()
+    log("Setup complete!", "ok")
+    print()
+    print(f"  Activate:  {VENV_DIR}\\Scripts\\activate" if platform.system() == "Windows"
+          else f"  Activate:  source {VENV_DIR}/bin/activate")
+    print(f"  CLI:       urbansolarcarver --help")
+    print(f"  Jupyter:   {vpy} -m jupyter notebook")
+    print()
+
+
+if __name__ == "__main__":
+    main()
